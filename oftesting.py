@@ -1,30 +1,40 @@
 import os
 import cv2
+import time
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
 
 # Constants and Parameters
-IMG_SIZE = 224
-MAX_SEQ_LENGTH = 20
-NUM_FEATURES = 2048
+IMG_SIZE = 225
+MAX_SEQ_LENGTH = 30
+NUM_FEATURES = 2048  #2048
 EPOCHS = 10
 
 # Load DataFrames
 train_df = pd.read_csv("./train.csv")
 test_df = pd.read_csv("./test.csv")
 
+
+
 # Helper Functions
 def crop_center_square(frame):
+    
+    frame = cv2.resize(frame, (400, 225), interpolation=cv2.INTER_AREA)
+
     y, x = frame.shape[0:2]
+    print(x, y)
+    print(type(frame), frame.shape)
     min_dim = min(y, x)
     start_x = (x // 2) - (min_dim // 2)
     start_y = (y // 2) - (min_dim // 2)
+    #cv2.imwrite(f"output_image_{time.time()}.jpg", frame[start_y:start_y+min_dim, start_x:start_x+min_dim])
+
     return frame[start_y:start_y+min_dim, start_x:start_x+min_dim]
 
 def load_video(video_path, max_frames=30, resize=(IMG_SIZE, IMG_SIZE)):
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(video_path)
     frames = []
     try:
         while True:
@@ -81,7 +91,7 @@ def prepare_all_videos(df, root_dir):
 
 # Prepare the training data
 (train_data, train_masks), train_labels = prepare_all_videos(train_df, "./train")
-
+#print(train_data, train_masks, train_labels)
 # Convert labels to numerical values
 train_labels = np.array(label_processor(train_labels))
 
@@ -116,7 +126,7 @@ sequence_model = get_sequence_model()
 sequence_model.fit([train_data, train_masks], train_labels, epochs=EPOCHS)
 
 # Save the model weights
-sequence_model.save_weights("./video_classification_project/video_classifier1.weights.h5")
+sequence_model.save_weights("./video_classification_project/video_classifier2.weights.h5")
 
 def prepare_single_video(frames):
     frames = frames[None, ...]
@@ -156,7 +166,7 @@ def live_action_detection():
         # Only proceed if you have collected the expected number of frames
         if len(frames) == MAX_SEQ_LENGTH:
             # Processing the frames for model prediction
-            frames = load_video(frames)  # Ensure load_video accepts frames directly
+            frames = load_video(video_path=0)  # Ensure load_video accepts frames directly
             frame_features, frame_mask = prepare_single_video(frames)
             probabilities = sequence_model.predict([frame_features, frame_mask])[0]
             
