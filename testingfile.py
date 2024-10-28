@@ -6,3 +6,4 @@ if not cap.isOpened():
 else:
     print("Camera is working.")
     cap.release()
+print("erri;papadsfj")
